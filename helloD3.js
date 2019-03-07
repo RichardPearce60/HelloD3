@@ -1,11 +1,11 @@
 define( [
 		'./js/properties',
-		'./js/d3.min'
+		'./js/d3'
 	],
 	function ( props , d3 ) {
 		'use strict';
 
-		
+
 		return {
 			definition: props,
 			initialProperties: {
@@ -20,20 +20,20 @@ define( [
 					]
 				}
 			},
-			
-				
-			
-			
+
+
+
+
 			// Paint/Rendering logic
 			paint: function ( $element, layout ) {
 			// Main rendering logic goes here
 
 				var hc = layout.qHyperCube;
 				console.log ('-------------------------')
-				console.log ('Version 9')
+				console.log ('Version 1')
 				console.log ('-------------------------')
 				console.log ('$element: ',$element)
-				console.log ('-------------------------')				
+				console.log ('-------------------------')
 				console.log ('# of Dimensions: ',hc.qDimensionInfo.length)
 				console.log ('# of Meaures: ',hc.qMeasureInfo.length)
 				console.log ('-------------------------')
@@ -42,43 +42,31 @@ define( [
 				console.log ('-------------------------')
 				console.log ('Data returned: ',hc)
 				console.log ('-------------------------')
-				
-	
+
+
 
 				// *****************************************************************************
 				// Convert the sense hypercube to D3 data array
 				// *****************************************************************************
-				var dataset = dataExtractF(layout); // Call the function below
-				console.log ('data: ',dataset)		
-				
-				
-				/* 	This code is saved for later exploration!	
-				var qMatrix = layout.qHyperCube.qDataPages[0].qMatrix;
-				var data = qMatrix.map(function(d) {
-							return {
-								"Metric1":d[1].qNum
-							}
-				});
-				console.log ('qMatrix: ',qMatrix)
-				console.log ('data: ',data)
-				 */
+				var dataset = dataExtractF(layout); // Call the function below to extract the data
+				console.log ('data: ',dataset)
 
 
-				
+
 				// *****************************************************************************
 				// Define the element here
 				// *****************************************************************************
 
 				var canvas_id  = "chartcontainer_" + layout.qInfo.qId ;
 				var ext_width = $element.width(), ext_height = $element.height();
-				
-				
+
+
 				console.log ('-------------------------')
 				console.log ('canvas_id: ',canvas_id)
 				console.log ('ext_width: ',ext_width)
 				console.log ('ext_height: ',ext_height)
-				
-				
+
+
 				if (document.getElementById(canvas_id)) { // Check element exists. If it does empty it ready for repopulation. If not create it.
 						$("#" + canvas_id).empty();
 					}
@@ -87,31 +75,29 @@ define( [
 				}
 				console.log ('canvas_id: ',canvas_id)
 				console.log ('-------------------------')
-				
-			
-				
-				
-				// *****************************************************************************
-				// Define the element here
-				// *****************************************************************************				
-				d3ChartInitialRender(dataset,layout,ext_width,ext_height,canvas_id);
-				
-				
-				
-				
-				
-						
 
-				//$element.append(); // Draw the defined element on the page
+
+
+				// *****************************************************************************
+				// Define the element here. We didn't have to pass d3 when used on Aviva (my be a server difference?)
+				// *****************************************************************************
+				d3ChartInitialRender(d3,dataset,layout,ext_width,ext_height,canvas_id);
+
 
 
 			}
 		};
 	} );
 
-	
-	
-	
+// ********************************************************************************************************************************************
+// ********************************************************************************************************************************************
+// ********************************************************************************************************************************************
+// ********************************************************* ADDITIONAL FUNCTIONS *************************************************************
+// ********************************************************************************************************************************************
+// ********************************************************************************************************************************************
+// ********************************************************************************************************************************************
+
+
 function dataExtractF(l) {  // Function taken from branch. (need to dysect). Not perfect need to use .qNum for the measures!
 	var t = null;
 	if (l.qHyperCube && l.qHyperCube.qDataPages[0].qMatrix) {  // Think this checks if data exists
@@ -128,13 +114,11 @@ function dataExtractF(l) {  // Function taken from branch. (need to dysect). Not
 }
 
 
-	
-var d3ChartInitialRender = function(dataset ,layout ,w ,h ,canvas_id) {
+
+var d3ChartInitialRender = function(d3,dataset ,layout ,w ,h ,canvas_id) {
+
+
 	console.log("HelloD3")
-	
-	// Declare Empty Global Variabes here
-	//var dataset =[5,10,15,25,22,1,4]; 
-	//var w = 500, h = 400;
 	console.log ('-------------------------')
 	console.log('dataset: ',dataset);
 	console.log('layout: ',layout);
@@ -142,111 +126,64 @@ var d3ChartInitialRender = function(dataset ,layout ,w ,h ,canvas_id) {
 	console.log('h: ',h);
 	console.log('canvas_id: ',canvas_id);
 
-	/*
-			<<<< data set is different now. a dimension and a 
-	*/
-	
 
-	var	bp = 2;
-	var padding = 40;
-	//var dataset =[5,10,15,25,22,1,4]; 
-	
+	var yPadding = 40, xPadding = 70;
 
-	
-/*   
-	var svg = d3.select("body")
-				.append("svg")
-				.attr("width",w)
-				.attr("height",h);
 
-     */
-	
+// Sales !! ***************************************************************
+	var yScale = d3.scaleLinear()
+				.domain([0, d3.max(dataset, function(d) { return d[1]; })])
+				.range([h-yPadding,yPadding]); // inverted
+
+
+	var xScale = d3.scaleBand()
+				.domain(dataset.map(function(d) { return d[0]; }))
+				.rangeRound([xPadding,w-xPadding])
+				.paddingInner(0.05);
+
+
+// Select SVG !! ***************************************************************
 	var svg = d3.select("#"+canvas_id)
 				.append("svg")
 				.attr("width", w)
 				.attr("height", h);
-				
-	
-
-/* 	var para = svg.selectAll("p")
-				.data(dataset)
-				.enter()
-				.append("p")
-				.text(function(d) {
-				return "here's some data " + d[0] + " and " + d[1];
-				}); */
-
-				
-	// BROKEN HERE, WORKS WHEN THE SCALE VAR ISN@T SET!!!!!!		
-	console.log ('-------------------------')
-	console.log('max: ',d3.max(dataset, function(d) { return d[1]; }));
-	
-//	var yScale = d3.scaleLinear()
-//				.domain([0, d3.max(dataset, function(d) { return d[1]; })])
-//				.range([0, h]);
-				
-	var yScale = d3.scaleLinear()
-			.domain([0, 14424656])
-			.range([0, 766]);			
 
 
-	console.log ('-------------------------')
-	//console.log('yScale: ',yScale);
-	console.log('max: ',d3.max(dataset, function(d) { return d[1]; }));
-				
-	
- 	var bars = svg.selectAll("rect")
+// Chart !! ***************************************************************
+var bars = svg.selectAll("rect")
 		.data(dataset)
 		.enter()
 		.append("rect")
-		.attr("x",function(d,i){return i * (w / dataset.length);} )
-	    .attr("y", function(d) {
-			return h - d[1];
+		.attr("x",function(d,i){return xScale(d[0]);} )
+	  .attr("y", function(d) {
+			return Math.round(yScale(d[1]))  ;
 	    })
-		.attr("width",function(d,i){return (w / dataset.length)-bp;} )
+		.attr("width",xScale.bandwidth() )
 		.attr("height", function(d) {
-			   		return d[1];
-		});
-		//.attr("fill","teal"); 
-
-
-
-			
-
-			
-/* 	svg.selectAll("text")
-		.data(dataset)
-		.enter()
-		.append("text")
-		.text(function(d){
-			return d;
+			   		return h - yPadding - Math.round(yScale(d[1]));
 			})
-		.attr("x",function(d,i){return i * (w / dataset.length)+  (((w / dataset.length)-bp)/2)    ;} )  // added the width of the bar divided by 2
-		
-		//.attr("y",function(d){return h-(d*4)+15;}) 
-		//.attr("y",100)  // 100 is the svg h and its flush to the base
-		.attr("y",function(d) {
-				var ry = 10;
-				if (d < 5)  // if the d value is < 5 then move the label up above the bar. Also change the color from white to black (below)
-					{ry = h-(d*4)-5;} 
-				else 
-					{ry = h-(d*4)+15;} ;	
-				return ry;
-				})
-		
-		.attr("font-family","sans-serif")
-		.attr("fill",function(d) {
-				var rv = 10;
-				if (d < 5) 
-					{rv = "black";} 
-				else 
-					{rv = "white";} ;	
-				return rv;
-				})
-		.attr("font-size","11px")
-		.attr("text-anchor","middle") */
-	
+		.attr("fill","teal");
+
+
+
+// Axis !! ***************************************************************
+		var xAxis = d3.axisBottom()
+					.scale(xScale);
+
+	  var yAxis = d3.axisLeft()
+					.scale(yScale);
+
+		svg.append("g")
+			.attr("class","axis")
+			.attr("transform","translate(0," + (h - yPadding) + ")")
+			.call(xAxis);
+
+			svg.append("g")
+				.attr("class","axis")
+				.attr("transform","translate(" + xPadding + ",0)")
+				.call(yAxis);
+// Axis XX ***************************************************************
+
+
 
 }
-	
-	
